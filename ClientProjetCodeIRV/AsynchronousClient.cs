@@ -22,23 +22,32 @@ namespace ClientProjetCodeIRV
         private static ManualResetEvent receiveDone =
             new ManualResetEvent(false);
 
+        private static Socket client;
+        private static IPAddress ipAddress;
+        private static IPHostEntry ipHostInfo;
+        private static IPEndPoint remoteEP;
+
+        private static Form1 clientWindow;
+
         // The response from the remote device.  
         private static String response = String.Empty;
 
-        private static void StartClient()
+        private static void StartClient(Form1 applicationWindow)
         {
+            
             // Connect to a remote device.  
             try
             {
                 // Establish the remote endpoint for the socket.  
                 // The name of the   
                 // remote device is "host.contoso.com".  
-                IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
-                IPAddress ipAddress = ipHostInfo.AddressList[0];
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+                ipHostInfo = Dns.GetHostEntry("localhost");
+                ipAddress = ipHostInfo.AddressList[0];
+                remoteEP = new IPEndPoint(ipAddress, port);
+                clientWindow = applicationWindow;
 
                 // Create a TCP/IP socket.  
-                Socket client = new Socket(ipAddress.AddressFamily,
+                client = new Socket(ipAddress.AddressFamily,
                     SocketType.Stream, ProtocolType.Tcp);
 
                 // Connect to the remote endpoint.  
@@ -47,19 +56,20 @@ namespace ClientProjetCodeIRV
                 connectDone.WaitOne();
 
                 // Send test data to the remote device.  
-                Send(client, "This is a test<EOF>");
+                Send(client, "This is a test\n<EOF>");
                 sendDone.WaitOne();
 
                 // Receive the response from the remote device.  
                 Receive(client);
                 receiveDone.WaitOne();
 
-                // Write the response to the console.  
-                Console.WriteLine("Response received : {0}", response);
+                // Write the response to the chat.
+                
+                clientWindow.stateMessage(string.Format("Response received : {0}", response));
 
                 // Release the socket.  
-                client.Shutdown(SocketShutdown.Both);
-                client.Close();
+                //client.Shutdown(SocketShutdown.Both);
+                //client.Close();
 
             }
             catch (Exception e)
@@ -175,10 +185,37 @@ namespace ClientProjetCodeIRV
                 Console.WriteLine(e.ToString());
             }
         }
-        public static int start()
+        public static int start (Form1 applicationWindow)
         {
-            StartClient();
+            StartClient(applicationWindow);
             return 0;
+        }
+
+        public static void shutDownClient()
+        {
+            client.Shutdown(SocketShutdown.Both);
+            client.Close();
+        }
+
+        public static void sendData(String data)
+        {
+            client = new Socket(ipAddress.AddressFamily,
+            SocketType.Stream, ProtocolType.Tcp);
+
+            client.BeginConnect(remoteEP,
+                    new AsyncCallback(ConnectCallback), client);
+            connectDone.WaitOne();
+
+            sendDone.Reset();
+            Send(client, data);
+            sendDone.WaitOne();
+
+            receiveDone.Reset();
+            Receive(client);
+            receiveDone.WaitOne();
+
+            clientWindow.receivedMessage(response);
+
         }
     }
 }

@@ -50,6 +50,9 @@
             this.WriteChat.Name = "WriteChat";
             this.WriteChat.Size = new System.Drawing.Size(705, 44);
             this.WriteChat.TabIndex = 1;
+            this.WriteChat.TextChanged += new System.EventHandler(this.WriteChat_TextChanged);
+            this.WriteChat.KeyDown += new System.Windows.Forms.KeyEventHandler(this.WriteChat_KeyDown);
+            this.WriteChat.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.WriteChat_KeyPress);
             // 
             // listBox1
             // 
